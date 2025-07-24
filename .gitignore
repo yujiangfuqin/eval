@@ -1,0 +1,15 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.dylib
+
+# Data
+dt/
+
+# Local config
+config.JSON
+
+# IDE settings
+.vscode/
