@@ -1,0 +1,20 @@
+{
+  "keys": {
+    "left_key" : "0xDEADBEEFCAFEBABE,0x0123456789ABCDEF",
+    "right_key" : "0x7F6E5D4C3B2A1908,0x8877665544332211"
+  },
+  "config": {
+    "player0": {
+      "host": "127.0.0.1",
+      "port": 10000
+    },
+    "player1": {
+      "host": "127.0.0.1",
+      "port": 10001
+    },
+    "player2": {
+      "host": "127.0.0.1",
+      "port": 10002
+    }
+  }
+}

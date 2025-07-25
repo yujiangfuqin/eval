@@ -4,6 +4,7 @@
 #include <fstream>
 #include <set>
 #include "nlohmann/json.hpp"
+#include <cryptoTools/Crypto/PRNG.h>
 using json = nlohmann::json;
 struct Player{
     std::string address;
@@ -25,14 +26,20 @@ class Config{
     Config(std::string path){
         config_json = load_json(path);
         json sub_conf = config_json["config"];
-        //current_player = config_json["myplayer"].get<std::string>();
+        std::string tmp = config_json["keys"]["left_key"].get<std::string>();
+        uint64_t high, low;
+        sscanf(tmp.c_str(), "0x%llx,0x%llx", &high, &low);
+        left_key = oc::block(high, low);
+        tmp = config_json["keys"]["right_key"].get<std::string>();
+        sscanf(tmp.c_str(), "0x%llx,0x%llx", &high, &low);
+        right_key = oc::block(high, low);
+        
         for (auto& el : sub_conf.items()) {
             Pmap[el.key()] = {el.value()["host"].get<std::string>(), el.value()["port"].get<int>()};
         }
         for(auto& key : Pmap){
             Ps.insert(key.first);
         }
-        //aid = {config_json["myplayer"]["host"].get<std::string>(), config_json["myplayer"]["port"].get<int>()};
     }
     int get_players_num(){
         return Pmap.size();
@@ -75,6 +82,12 @@ class Config{
         //TODO:
         return current_player[current_player.length() - 1] - '0';
     }
+    oc::block get_left_key() const {
+        return left_key;
+    }
+    oc::block get_right_key() const {
+        return right_key;
+    }
     static uint32_t get_idex(std::string name){
         //TODO
         return name[name.length() - 1] - '0';
@@ -92,7 +105,7 @@ class Config{
     private:
     json config_json;
     std::string current_player;
-    
+    oc::block left_key, right_key;
 
 };
 

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PRSS_HPP
+#define PRSS_HPP
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cstdint>
 
@@ -12,3 +13,5 @@ struct PRSS {
         return { left.get<u64>(), right.get<u64>() };
     }
 };
+
+#endif // PRSS_HPP
