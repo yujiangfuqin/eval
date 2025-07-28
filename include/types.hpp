@@ -3,8 +3,19 @@
 
 #include <vector>
 #include <cstdint>
+#include <array>
 
-struct Per{
+
+template<typename T>
+struct RepShare {
+    std::array<T, 2> shares; 
+
+    RepShare() = default;
+    RepShare(const T& left, const T& right) : shares{left, right} {}
+
+};
+
+struct Perm{
     std::vector<uint32_t> zeta, sigma, zeta_f, sigma_f;
 
     void resize(size_t new_size) {

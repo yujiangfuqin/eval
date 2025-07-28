@@ -27,12 +27,12 @@ int main(int argc, const char** argv) {
     //     std::cout << "share 1: " << dt->Ps[i];
     // }
     for(int i = 0; i< dt->node_lens*2+1; i++){
-        std::cout << dt->per.zeta[i] << " ";
+        std::cout << dt->perm.shares[1].zeta[i] << " ";
         if(i % 10 == 9) std::cout << std::endl;
     }
     std::cout << std::endl;
     for(int i = 0; i< dt->node_lens*2+1; i++){
-        std::cout << dt->per.sigma[i] << " ";
+        std::cout << dt->perm.shares[1].sigma[i] << " ";
         if(i % 10 == 9) std::cout << std::endl;
     }
     std::cout << "node lens: " << dt->node_lens << std::endl;
@@ -41,17 +41,17 @@ int main(int argc, const char** argv) {
     prss.left = Config::myconfig->get_left_key();
     prss.right= Config::myconfig->get_right_key();
 
-    Shuffle<uint64_t> shuffle;
-    auto perm1 = shuffle.generate_random_permutation(dt->node_lens, prss.left);
-    std::cout << "Generated random permutation: ";
-    for (const auto& p : perm1) {
+
+    Shuffle<uint64_t> shuffle(prss);
+    auto perms = shuffle.generate(dt->node_lens);
+    std::cout << "Generated random permutations (left/right):" << std::endl;
+    std::cout << "left:  ";
+    for (const auto& p : perms.shares[0]) {
         std::cout << p << " ";
     }
     std::cout << std::endl;
-
-    auto perm2 = shuffle.generate_random_permutation(dt->node_lens, prss.right);
-    std::cout << "Generated random permutation: ";
-    for (const auto& p : perm2) {
+    std::cout << "right: ";
+    for (const auto& p : perms.shares[1]) {
         std::cout << p << " ";
     }
     std::cout << std::endl;

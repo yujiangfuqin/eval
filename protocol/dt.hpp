@@ -70,69 +70,70 @@ class Dt{
         min_deep = find_min_deep(tmp, 0);
         node_lens = tmp.size();
         uint32_t total_nodes = node_lens + deep - min_deep;
-        Ps.resize(total_nodes);
+        Ps.shares[0].resize(total_nodes);
         start_x = tmp.at(0)->idx;
 
         for(uint32_t i = 0; i < node_lens; i++){
             auto const& current_node = tmp.at(i);
-            Ps[i].ln = current_node->left; Ps[i].rn = current_node->right;
-            Ps[i].lf = tmp.at(current_node->left)->idx; Ps[i].rf = tmp.at(current_node->right)->idx;
-            Ps[i].node_lens = total_nodes; Ps[i].data_lens = data_lens;
-            if(Ps[i].ln == 0) Ps[i].ln = node_lens;
-            if(Ps[i].rn == 0) Ps[i].rn = node_lens;
+            Ps.shares[0][i].ln = current_node->left; Ps.shares[0][i].rn = current_node->right;
+            Ps.shares[0][i].lf = tmp.at(current_node->left)->idx; Ps.shares[0][i].rf = tmp.at(current_node->right)->idx;
+            Ps.shares[0][i].node_lens = total_nodes; Ps.shares[0][i].data_lens = data_lens;
+            if(Ps.shares[0][i].ln == 0) Ps.shares[0][i].ln = node_lens;
+            if(Ps.shares[0][i].rn == 0) Ps.shares[0][i].rn = node_lens;
         }
         
-        cal_t(Ps.data(), tmp, 0, 0);
+        cal_t(Ps.shares[0].data(), tmp, 0, 0);
 
         for(uint32_t i = node_lens; i < total_nodes; i++){
-            Ps[i].ln = i + 1; Ps[i].rn = i + 1; Ps[i].lf = 0; Ps[i].rf = 0; Ps[i].t = 0;
-            Ps[i].node_lens = total_nodes; Ps[i].data_lens = data_lens;
+            Ps.shares[0][i].ln = i + 1; Ps.shares[0][i].rn = i + 1; Ps.shares[0][i].lf = 0; Ps.shares[0][i].rf = 0; Ps.shares[0][i].t = 0;
+            Ps.shares[0][i].node_lens = total_nodes; Ps.shares[0][i].data_lens = data_lens;
         }
 
-        Ps[total_nodes - 1].ln = total_nodes - 1; Ps[total_nodes - 1].rn = total_nodes - 1;
+        Ps.shares[0][total_nodes - 1].ln = total_nodes - 1; Ps.shares[0][total_nodes - 1].rn = total_nodes - 1;
         node_lens = total_nodes;
 
-        Ps_rep.resize(node_lens); 
+        Ps.shares[0].resize(node_lens); 
+        Ps.shares[1].resize(node_lens);
         uint32_t per_size = node_lens * 2 + 1;
-        per.resize(per_size);
-        per_rep.resize(per_size);
-        per.zeta.resize(per_size);
+
+        perm.shares[0].resize(per_size);
+        perm.shares[1].resize(per_size);
         free_tree(tmp);
     }
 
-    void genPer(){
+    void genPerm(){
         uint32_t point = 0;
         uint32_t end = node_lens * 2;
 
         std::vector<uint32_t> node_indices;
         for(uint32_t i = 0; i < node_lens; i++){
-            node_indices.push_back(Ps[i].ln);
-            node_indices.push_back(Ps[i].rn);
+            node_indices.push_back(Ps.shares[0][i].ln);
+            node_indices.push_back(Ps.shares[0][i].rn);
         }
         std::vector<uint32_t> aux = cal_aux(node_indices, node_lens);
         int repeat_count = 0;
        
         for(int i = 0 ; i < node_lens; i++){
             repeat_count = aux[i];
-            per.zeta[i] = point;
+            perm.shares[0].zeta[i] = point;
             point++;
             for (int counter = 1; counter <= repeat_count; ++counter) {
-                per.zeta[end] = point;
+                perm.shares[0].zeta[end] = point;
                 end--;
                 point++;
             }
         }
 
         point = 1; end = node_lens - deep + min_deep;
-        per.sigma[0] = 0;
+        perm.shares[0].sigma[0] = 0;
 
         for(int i = 0; i < node_lens * 2; i++){
             if(node_indices[i] < node_lens - deep + min_deep){
-                per.sigma[node_indices[i]] = point;
+                perm.shares[0].sigma[node_indices[i]] = point;
                 point++;
             }
             else{
-                per.sigma[end] = point;
+                perm.shares[0].sigma[end] = point;
                 point++;
                 end++;
             }
@@ -145,46 +146,46 @@ class Dt{
     void deposit(){
         if(Config::myconfig->check(owner)){
             std::vector<D> Ps0(node_lens), Ps1(node_lens);
-            Per per0, per1;
-            per0.resize(node_lens*2+1);
-            per1.resize(node_lens*2+1);
+            Perm perm0, perm1;
+            perm0.resize(node_lens*2+1);
+            perm1.resize(node_lens*2+1);
             uint32_t id[2], x[2];
             
-            genPer();
+            genPerm();
 
             RAND_bytes(reinterpret_cast<uint8_t*>(Ps0.data()), sizeof(D) * node_lens);
             RAND_bytes(reinterpret_cast<uint8_t*>(Ps1.data()), sizeof(D) * node_lens);
-            RAND_bytes(reinterpret_cast<uint8_t*>(per0.zeta.data()), sizeof(uint32_t) * per0.zeta.size());
-            RAND_bytes(reinterpret_cast<uint8_t*>(per1.zeta.data()), sizeof(uint32_t) * per1.zeta.size());
-            RAND_bytes(reinterpret_cast<uint8_t*>(per0.sigma.data()), sizeof(uint32_t) * per0.zeta.size());
-            RAND_bytes(reinterpret_cast<uint8_t*>(per1.sigma.data()), sizeof(uint32_t) * per1.zeta.size());
-            RAND_bytes(reinterpret_cast<uint8_t*>(per0.zeta_f.data()), sizeof(uint32_t) * per0.zeta.size());
-            RAND_bytes(reinterpret_cast<uint8_t*>(per1.zeta_f.data()), sizeof(uint32_t) * per1.zeta.size());
-            RAND_bytes(reinterpret_cast<uint8_t*>(per0.sigma_f.data()), sizeof(uint32_t) * per0.zeta.size());
-            RAND_bytes(reinterpret_cast<uint8_t*>(per1.sigma_f.data()), sizeof(uint32_t) * per1.zeta.size());
+            RAND_bytes(reinterpret_cast<uint8_t*>(perm0.zeta.data()), sizeof(uint32_t) * perm0.zeta.size());
+            RAND_bytes(reinterpret_cast<uint8_t*>(perm1.zeta.data()), sizeof(uint32_t) * perm1.zeta.size());
+            RAND_bytes(reinterpret_cast<uint8_t*>(perm0.sigma.data()), sizeof(uint32_t) * perm0.zeta.size());
+            RAND_bytes(reinterpret_cast<uint8_t*>(perm1.sigma.data()), sizeof(uint32_t) * perm1.zeta.size());
+            RAND_bytes(reinterpret_cast<uint8_t*>(perm0.zeta_f.data()), sizeof(uint32_t) * perm0.zeta.size());
+            RAND_bytes(reinterpret_cast<uint8_t*>(perm1.zeta_f.data()), sizeof(uint32_t) * perm1.zeta.size());
+            RAND_bytes(reinterpret_cast<uint8_t*>(perm0.sigma_f.data()), sizeof(uint32_t) * perm0.zeta.size());
+            RAND_bytes(reinterpret_cast<uint8_t*>(perm1.sigma_f.data()), sizeof(uint32_t) * perm1.zeta.size());
             RAND_bytes(reinterpret_cast<uint8_t*>(id), 2*sizeof(uint32_t));
             RAND_bytes(reinterpret_cast<uint8_t*>(x), 2*sizeof(uint32_t));
             for(int i = 0; i < node_lens; i++){
                 Ps0[i].ln %= node_lens;Ps0[i].rn %= node_lens;Ps1[i].ln %= node_lens;Ps1[i].rn %= node_lens;
                 Ps0[i].lf %= data_lens;Ps0[i].rf %= data_lens;Ps1[i].lf %= data_lens;Ps1[i].rf %= data_lens;
-                Ps[i].ln = (Ps[i].ln - Ps0[i].ln - Ps1[i].ln + 2*node_lens) % node_lens;
-                Ps[i].rn = (Ps[i].rn - Ps0[i].rn - Ps1[i].rn + 2*node_lens) % node_lens;
-                Ps[i].lf = (Ps[i].lf - Ps0[i].lf - Ps1[i].lf + 2*data_lens) % data_lens;
-                Ps[i].rf = (Ps[i].rf - Ps0[i].rf - Ps1[i].rf + 2*data_lens) % data_lens;
-                Ps[i].t = (Ps[i].t - Ps0[i].t - Ps1[i].t);
-                Ps[i].data_lens = Ps0[i].data_lens = Ps1[i].data_lens = data_lens;
-                Ps[i].node_lens = Ps0[i].node_lens = Ps1[i].node_lens = node_lens;
+                Ps.shares[0][i].ln = (Ps.shares[0][i].ln - Ps0[i].ln - Ps1[i].ln + 2*node_lens) % node_lens;
+                Ps.shares[0][i].rn = (Ps.shares[0][i].rn - Ps0[i].rn - Ps1[i].rn + 2*node_lens) % node_lens;
+                Ps.shares[0][i].lf = (Ps.shares[0][i].lf - Ps0[i].lf - Ps1[i].lf + 2*data_lens) % data_lens;
+                Ps.shares[0][i].rf = (Ps.shares[0][i].rf - Ps0[i].rf - Ps1[i].rf + 2*data_lens) % data_lens;
+                Ps.shares[0][i].t = (Ps.shares[0][i].t - Ps0[i].t - Ps1[i].t);
+                Ps.shares[0][i].data_lens = Ps0[i].data_lens = Ps1[i].data_lens = data_lens;
+                Ps.shares[0][i].node_lens = Ps0[i].node_lens = Ps1[i].node_lens = node_lens;
                 
             }
             for(int i = 0; i < node_lens*2+1; i++){
-                per0.zeta[i] %= node_lens*2+1; per1.zeta[i] %= node_lens*2+1;
-                per0.sigma[i] %= node_lens*2+1; per1.sigma[i] %= node_lens*2+1;
-                per0.zeta_f[i] %= node_lens*2+1; per1.zeta_f[i] %= node_lens*2+1;
-                per0.sigma_f[i] %= node_lens*2+1; per1.sigma_f[i] %= node_lens*2+1;
-                per.zeta[i] = (per.zeta[i] - per0.zeta[i] - per1.zeta[i] + 2*(node_lens*2+1)) % (node_lens*2+1);
-                per.sigma[i] = (per.sigma[i] - per0.sigma[i] - per1.sigma[i] + 2*(node_lens*2+1)) % (node_lens*2+1);
-                per.zeta_f[i] = (per.zeta_f[i] - per0.zeta_f[i] - per1.zeta_f[i] + 2*(node_lens*2+1)) % (node_lens*2+1);
-                per.sigma_f[i] = (per.sigma_f[i] - per0.sigma_f[i] - per1.sigma_f[i] + 2*(node_lens*2+1)) % (node_lens*2+1);
+                perm0.zeta[i] %= node_lens*2+1; perm1.zeta[i] %= node_lens*2+1;
+                perm0.sigma[i] %= node_lens*2+1; perm1.sigma[i] %= node_lens*2+1;
+                perm0.zeta_f[i] %= node_lens*2+1; perm1.zeta_f[i] %= node_lens*2+1;
+                perm0.sigma_f[i] %= node_lens*2+1; perm1.sigma_f[i] %= node_lens*2+1;
+                perm.shares[0].zeta[i] = (perm.shares[0].zeta[i] - perm0.zeta[i] - perm1.zeta[i] + 2*(node_lens*2+1)) % (node_lens*2+1);
+                perm.shares[0].sigma[i] = (perm.shares[0].sigma[i] - perm0.sigma[i] - perm1.sigma[i] + 2*(node_lens*2+1)) % (node_lens*2+1);
+                perm.shares[0].zeta_f[i] = (perm.shares[0].zeta_f[i] - perm0.zeta_f[i] - perm1.zeta_f[i] + 2*(node_lens*2+1)) % (node_lens*2+1);
+                perm.shares[0].sigma_f[i] = (perm.shares[0].sigma_f[i] - perm0.sigma_f[i] - perm1.sigma_f[i] + 2*(node_lens*2+1)) % (node_lens*2+1);
             }
             id[0] %= node_lens;id[1] %= node_lens;
             x[0] %= data_lens;x[1] %= data_lens;
@@ -196,30 +197,31 @@ class Dt{
             */
            P2Pchannel::mychnl->send_vector(Config::myconfig->get_suc(),  Ps0);
            P2Pchannel::mychnl->send_vector(Config::myconfig->get_suc(),  Ps1);
-           P2Pchannel::mychnl->send_per(Config::myconfig->get_suc(),  per0);
-           P2Pchannel::mychnl->send_per(Config::myconfig->get_suc(),  per1);
+           P2Pchannel::mychnl->send_per(Config::myconfig->get_suc(),  perm0);
+           P2Pchannel::mychnl->send_per(Config::myconfig->get_suc(),  perm1);
            P2Pchannel::mychnl->send_data_to(Config::myconfig->get_suc(),  &id[0], sizeof(uint32_t));
            P2Pchannel::mychnl->send_data_to(Config::myconfig->get_suc(),  &x[0], sizeof(uint32_t));
            
            P2Pchannel::mychnl->send_vector(Config::myconfig->get_pre(),  Ps1);
-           P2Pchannel::mychnl->send_vector(Config::myconfig->get_pre(),  Ps);
-           P2Pchannel::mychnl->send_per(Config::myconfig->get_pre(),  per1);
-           P2Pchannel::mychnl->send_per(Config::myconfig->get_pre(),  per);
+           P2Pchannel::mychnl->send_vector(Config::myconfig->get_pre(),  Ps.shares[0]);
+           P2Pchannel::mychnl->send_per(Config::myconfig->get_pre(),  perm1);
+           P2Pchannel::mychnl->send_per(Config::myconfig->get_pre(),  perm.shares[0]);
            P2Pchannel::mychnl->send_data_to(Config::myconfig->get_pre(),  &id[1], sizeof(uint32_t));
            P2Pchannel::mychnl->send_data_to(Config::myconfig->get_pre(),  &x[1], sizeof(uint32_t));
-           Ps_rep = Ps0;
+           Ps.shares[1] = Ps0;
+           perm.shares[1] = perm0;
         }
         else{
-            P2Pchannel::mychnl->recv_vector(owner, Ps);
-            P2Pchannel::mychnl->recv_vector(owner, Ps_rep);
+            P2Pchannel::mychnl->recv_vector(owner, Ps.shares[0]);
+            P2Pchannel::mychnl->recv_vector(owner, Ps.shares[1]);
 
-            node_lens = Ps.size();
+            node_lens = Ps.shares[0].size();
             uint32_t per_size = node_lens * 2 + 1;
-            per.resize(per_size);
-            per_rep.resize(per_size);
+            perm.shares[0].resize(per_size);
+            perm.shares[1].resize(per_size);
 
-            P2Pchannel::mychnl->recv_per(owner, per);
-            P2Pchannel::mychnl->recv_per(owner, per_rep);
+            P2Pchannel::mychnl->recv_per(owner, perm.shares[0]);
+            P2Pchannel::mychnl->recv_per(owner, perm.shares[1]);
             P2Pchannel::mychnl->recv_data_from(owner, &start_n, sizeof(uint32_t));
             P2Pchannel::mychnl->recv_data_from(owner, &start_x, sizeof(uint32_t));
         }
@@ -228,9 +230,9 @@ class Dt{
     bool inside_gen = false;
 
     public:
-    std::vector<D> Ps, Ps_rep;
+    RepShare<std::vector<D>> Ps;
     T * vs = nullptr;
-    Per per, per_rep;
+    RepShare<Perm> perm;
     uint32_t data_lens, node_lens, deep, min_deep;
     uint32_t start_n = 0, start_x;
 
