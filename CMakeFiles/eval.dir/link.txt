@@ -1,0 +1,1 @@
+/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/eval.dir/src/main.cpp.o -o eval  /opt/homebrew/lib/libssl.dylib /opt/homebrew/lib/libcrypto.dylib /Users/ling/Documents/code/libOTe/out/build/osx/cryptoTools/cryptoTools/libcryptoTools.a -lpthread

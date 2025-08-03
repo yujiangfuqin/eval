@@ -1,10 +1,7 @@
 #include <iostream>
 #include <iomanip>
-#include "dt.hpp"
 #include "timer.hpp"
-#include "prss.hpp"
-#include "shuffle.hpp"
-
+#include "eval.hpp"
 
 Config* Config::myconfig = nullptr;
 P2Pchannel* P2Pchannel::mychnl = nullptr;
@@ -19,120 +16,147 @@ int main(int argc, const char** argv) {
     P2Pchannel::mychnl = new P2Pchannel(Config::myconfig->Pmap, st);
     Config::myconfig->set_player(st);
 
-    Timer::record("total_time");
-    Dt<uint32_t, Node<uint32_t>> *dt = new Dt<uint32_t, Node<uint32_t>>("../dt/iris", 10, "player0", "player1", "player2");
-    
+    std::vector<std::string> total_set = {"iris", "wine", "linnerud", "breast", "digits", "diabetes", "boston"};
+    uint32_t data_lens[7] = {5, 8, 4, 13, 48, 11, 14};
 
-    // for(int i = 0; i< dt->node_lens; i++){
-    //     std::cout << "share 1: " << dt->Ps[i];
+    // for(auto & str:total_set){
+    //     std::cout<<"dataset "<<str<<std::endl;
+
+    //     uint64_t result;
+    //     Dt<uint64_t, Node<uint64_t>>*dt = new Dt<uint64_t, Node<uint64_t>>("../dt/" + str, data_len, "player0");
+    //     DtEval<uint64_t> *dt_eval = new DtEval<uint64_t>(dt, shuffler);
+    //     dt_eval->offline();
+    //     Timer::record(str);
+    //     result = dt_eval->online();
+    //     Timer::stop(str);
+    //     delete dt;
+    //     delete dt_eval;
     // }
-    for(int i = 0; i< dt->node_lens*2+1; i++){
-        std::cout << dt->perm.shares[1].zeta[i] << " ";
-        if(i % 10 == 9) std::cout << std::endl;
-    }
-    std::cout << std::endl;
-    for(int i = 0; i< dt->node_lens*2+1; i++){
-        std::cout << dt->perm.shares[1].sigma[i] << " ";
-        if(i % 10 == 9) std::cout << std::endl;
-    }
-    std::cout << "node lens: " << dt->node_lens << std::endl;
-
+    uint64_t result;
     PRSS prss;
     prss.left = Config::myconfig->get_left_key();
     prss.right= Config::myconfig->get_right_key();
+    
+    Dt<uint64_t, Node<uint64_t>> *dt = new Dt<uint64_t, Node<uint64_t>>("../dt/boston", 14, "player0");
+    Shuffler<uint64_t> shuffler(prss);
+
+    RepShare<std::vector<uint32_t>> tmp_zeta;
+    tmp_zeta.shares[0] = dt->perms.shares[0].zeta_f;
+    tmp_zeta.shares[1] = dt->perms.shares[1].zeta_f;
 
 
-    Shuffle<uint64_t> shuffle(prss);
-    auto perms = shuffle.generate(dt->node_lens);
-    std::cout << "Generated random permutations (left/right):" << std::endl;
-    std::cout << "left:  ";
-    for (const auto& p : perms.shares[0]) {
-        std::cout << p << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "right: ";
-    for (const auto& p : perms.shares[1]) {
-        std::cout << p << " ";
-    }
-    std::cout << std::endl;
+    DtEval<uint64_t> *dt_eval = new DtEval<uint64_t>(dt, shuffler, RepShare<std::vector<uint64_t>>{std::vector<uint64_t>(4, 0), std::vector<uint64_t>(4, 0)});
+    Timer::record("iris");
+    dt_eval->offline();
+    //result = dt_eval->online();
+    Timer::stop("iris");
+    Timer::test_print();
+    delete dt;
+    delete dt_eval;
 
-    Timer::stop("total_time");
-      Timer::test_print();
 
+
+    // //测试 reshare(RepShare<std::vector<Node<T>>> &a, uint32_t st)
+    // {
+    //     size_t n = 5;
+    //     RepShare<std::vector<Node<uint64_t>>> a{
+    //         std::vector<Node<uint64_t>>(n),
+    //         std::vector<Node<uint64_t>>(n)
+    //     };
+    //     // 用 random_node 初始化
+    //     for(size_t i = 0; i < n; ++i) {
+    //         a.shares[0][i] = shuffler.random_node(0, n);
+    //         a.shares[1][i] = shuffler.random_node(1, n);
+    //     }
+
+    //     //std::cout << "After reshare (Node):\n";
+
+        // Node<uint64_t> node;
+        // RepShare<Node<uint64_t>> r_node;
+        // std::cout << "Before apply permutation:\n";
+        // for(size_t i = 0; i < n; ++i) {
+        //     r_node.shares[0] = a.shares[0][i];
+        //     r_node.shares[1] = a.shares[1][i];
+        //     node = shuffler.reveal(r_node);
+        //     //打印node
+            
+        //     std::cout << node ;
+        // }
+
+        // RepShare<std::vector<uint32_t>> a{
+        //     std::vector<uint32_t>(5, 0),
+        //     std::vector<uint32_t>(5, 0)
+        //     };
+        // if(Config::myconfig->get_idex() == 0) { 
+        //     a.shares[0] = {0, 1, 2, 3, 4};
+        //     a.shares[1] = {0, 0, 0, 0, 0};
+        // }
+        // else if(Config::myconfig->get_idex() == 1) { 
+        //     a.shares[0] = {0, 0, 0, 0, 0};
+        //     a.shares[1] = {0, 0, 0, 0, 0};
+        // }
+        // else {
+        //     a.shares[0] = {0, 0, 0, 0, 0};
+        //     a.shares[1] = {0, 1, 2, 3, 4};
+        // }
+
+        // RepShare<std::vector<uint32_t>> perms{
+        //     std::vector<uint32_t>(5, 0),
+        //     std::vector<uint32_t>(5, 0)
+        // };
+        // if(Config::myconfig->get_idex() == 0) { 
+        //     perms.shares[0] = {4, 2, 0, 1, 3};
+        //     perms.shares[1] = {0, 0, 0, 0, 0};
+        // }
+        // else if(Config::myconfig->get_idex() == 1) { 
+        //     perms.shares[0] = {0, 0, 0, 0, 0};
+        //     perms.shares[1] = {0, 0, 0, 0, 0};
+        // }
+        // else {
+        //     perms.shares[0] = {0, 0, 0, 0, 0};
+        //     perms.shares[1] = {4, 2, 0, 1, 3};
+        // }
+        // std::vector<uint32_t> tmp = shuffler.reveal(perms);
+        // std::cout << "Revealed permutation: ";
+        // for(auto& v : tmp) std::cout << v << " ";
+        // std::cout << std::endl;
+
+        // tmp = shuffler.reveal(a);
+        // std::cout << "Revealed a: ";
+        // for(auto& v : tmp) std::cout << v << " ";
+        // std::cout << std::endl;
+
+        // shuffler.apply_permutation(a, perms);
+
+        // tmp = shuffler.reveal(a);
+        // std::cout << "Revealed a: ";
+        // for(auto& v : tmp) std::cout << v << " ";
+        // std::cout << std::endl;
+
+        // std::cout << "After apply permutation:\n";
+        // for(size_t i = 0; i < n; ++i) {
+        //     r_node.shares[0] = a.shares[0][i];
+        //     r_node.shares[1] = a.shares[1][i];
+        //     node = shuffler.reveal(r_node);
+        //     std::cout << "Node " << i << ": " << node;
+        // }
+    
+    // }
     return 0;
 }
 
-// std::cout << "=== PRSS 核心功能测试 ===" << std::endl;
-    
-    // // 测试4: 单密钥生成多个相同随机值
-    // std::cout << "\n--- 测试1: 单密钥生成多个随机值 ---" << std::endl;
-    // std::cout << "演示：相同密钥 → 相同随机序列" << std::endl;
-    
-    // // 定义一个共享密钥
-    // oc::block shared_key = oc::block(0x1234567890ABCDEFULL, 0xFEDCBA0987654321ULL);
-    
-    // // 参与方A使用该密钥
-    // oc::PRNG prng_A;
-    // prng_A.SetSeed(shared_key);
-    
-    // // 参与方B使用相同密钥
-    // oc::PRNG prng_B;
-    // prng_B.SetSeed(shared_key);
-    
-    // std::cout << "\n两方使用相同密钥生成随机序列：" << std::endl;
-    // std::cout << std::hex << std::setfill('0');
-    
-    // for(int i = 0; i < 6; i++) {
-    //     u64 rand_A = prng_A.get<u64>();
-    //     u64 rand_B = prng_B.get<u64>();
-        
-    //     std::cout << "第" << std::dec << i+1 << "个随机值: ";
-    //     std::cout << "A=0x" << std::hex << std::setw(16) << rand_A;
-    //     std::cout << ", B=0x" << std::hex << std::setw(16) << rand_B;
-    //     std::cout << " " << (rand_A == rand_B ? "✓相同" : "✗不同") << std::endl;
-    // }
-    
-    // // 测试6: 密钥重置后重新生成相同序列
-    // std::cout << std::dec << "\n--- 测试2: 密钥重置后的一致性 ---" << std::endl;
-    
-    // oc::PRNG prng_reset;
-    // oc::block test_key = oc::block(0xABCDEF0123456789ULL, 0x9876543210FEDCBAULL);
-    
-    // // 第一次使用密钥
-    // prng_reset.SetSeed(test_key);
-    // u64 first_seq[3];
-    // for(int i = 0; i < 3; i++) {
-    //     first_seq[i] = prng_reset.get<u64>();
-    // }
-    
-    // // 重置相同密钥
-    // prng_reset.SetSeed(test_key);
-    // u64 second_seq[3];
-    // for(int i = 0; i < 3; i++) {
-    //     second_seq[i] = prng_reset.get<u64>();
-    // }
-    
-    // std::cout << "第一次序列: ";
-    // for(int i = 0; i < 3; i++) {
-    //     std::cout << "0x" << std::hex << std::setw(8) << (first_seq[i] & 0xFFFFFFFF) << " ";
-    // }
-    // std::cout << std::endl;
-    
-    // std::cout << "重置后序列: ";
-    // for(int i = 0; i < 3; i++) {
-    //     std::cout << "0x" << std::hex << std::setw(8) << (second_seq[i] & 0xFFFFFFFF) << " ";
-    // }
-    // std::cout << std::endl;
-    
-    // bool sequences_match = true;
-    // for(int i = 0; i < 3; i++) {
-    //     if(first_seq[i] != second_seq[i]) {
-    //         sequences_match = false;
-    //         break;
-    //     }
-    // }
-    
-    // std::cout << std::dec << "序列一致性: " << (sequences_match ? "✓完全相同" : "✗不同") << std::endl;
-    
-    // std::cout << "\n=== 测试完成 ===" << std::endl;
-    // return 0;
+
+//prss功能正常
+
+//reveal(vector<uint32_t>)功能正常
+//reveal(template<typename U>)功能正常
+
+//apply_permutation_local功能正常
+
+//generate功能正常
+
+//reshare(RepShare<std::vector<T>> &a, uint32_t st)功能正常
+//reshare(RepShare<std::vector<Node<T>>> &a, uint32_t st)功能正常
+
+//shuffle(RepShare<std::vector<T>> &a, RepShare<std::vector<uint32_t>> perms)功能正常
+//apply_permutation(RepShare<std::vector<T>> &a, RepShare<std::vector<uint32_t>> &rou)功能正常

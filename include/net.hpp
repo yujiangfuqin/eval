@@ -373,14 +373,14 @@ class P2Pchannel{
         }
     }
 
-    void send_per(std::string player, const Perm& p) {
+    void send_perm(std::string player, const Perm& p) {
         send_vector(player, p.zeta);
         send_vector(player, p.sigma);
         send_vector(player, p.zeta_f);
         send_vector(player, p.sigma_f);
     }
 
-    void recv_per(std::string player, Perm& p) {
+    void recv_perm(std::string player, Perm& p) {
         recv_vector(player, p.zeta);
         recv_vector(player, p.sigma);
         recv_vector(player, p.zeta_f);

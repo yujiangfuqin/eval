@@ -1,5 +1,6 @@
 #ifndef _DT_HELPER_
 #define _DT_HELPER_
+#include <cstdint>
 #include <fstream>
 #include <vector>
 #include <iostream>

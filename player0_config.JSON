@@ -1,7 +1,7 @@
 {
   "keys": {
     "left_key": "0xA1B2C3D4E5F60718,0x1928374655647382",
-    "right_key": "0xDEADBEEFCAFEBABE,0x0123456789ABCDEF"
+    "right_key": "0xDEADBEEFCAFEBABC,0x0123456789ABCDEF"
   },
   "config": {
     "player0": {
