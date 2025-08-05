@@ -131,7 +131,7 @@ class DtEval{
 
         dt->idx_n = shuffler.reveal(tmp_n, dt->node_lens);
         dt->idx_f = shuffler.reveal(tmp_f, dt->data_lens);
-        std::cout << "idx_n: " << dt->idx_n << ", idx_f: " << dt->idx_f << std::endl;
+        // std::cout << "idx_n: " << dt->idx_n << ", idx_f: " << dt->idx_f << std::endl;
     }
 
     T online(){
@@ -158,11 +158,10 @@ class DtEval{
             t_share.shares[0] = cur_node.shares[0].t; t_share.shares[1] = cur_node.shares[1].t;
             
             R.shares[0] += t_share.shares[0]; R.shares[1] += t_share.shares[1];
-
             //cot(cur_feature, t_share, ln_share, rn_share, lf_share, rf_share); 通过cot更新idx_n和idx_f
         }
 
-        return shuffler.reveal(R);
+        return shuffler.reveal(R, std::numeric_limits<T>::max());
     }
 
     ~DtEval(){

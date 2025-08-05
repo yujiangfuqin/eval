@@ -2,6 +2,7 @@
 #include "prss.hpp"
 #include "types.hpp"
 #include "utils.hpp"
+#include <limits>
 
 template<typename T>
 class Shuffler
@@ -97,7 +98,7 @@ class Shuffler
     }
 
     template<typename U>
-    std::vector<U> reveal(RepShare<std::vector<U>> rou, uint32_t size) { 
+    std::vector<U> reveal(RepShare<std::vector<U>> rou, T size) { 
         P2Pchannel::mychnl->send_vector(Config::myconfig->get_suc(), rou.shares[0]);
         P2Pchannel::mychnl->send_vector(Config::myconfig->get_pre(), rou.shares[1]);
         std::vector<U> tmp(rou.shares[0].size()),tmp1(rou.shares[1].size());
@@ -115,7 +116,7 @@ class Shuffler
     }
 
     template<typename U>
-    U reveal(RepShare<U> idx, uint32_t size){
+    U reveal(RepShare<U> idx, T size){
         P2Pchannel::mychnl->send_data_to(Config::myconfig->get_suc(), &idx.shares[0], sizeof(U));
         P2Pchannel::mychnl->send_data_to(Config::myconfig->get_pre(), &idx.shares[1], sizeof(U));
         U tmp, tmp1;

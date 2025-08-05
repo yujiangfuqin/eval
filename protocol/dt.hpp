@@ -177,6 +177,13 @@ class Dt{
            P2Pchannel::mychnl->send_vector(Config::myconfig->get_pre(),  Ps.shares[0]);
            P2Pchannel::mychnl->send_perm(Config::myconfig->get_pre(),  perm1);
            P2Pchannel::mychnl->send_perm(Config::myconfig->get_pre(),  perms.shares[0]);
+
+           // Send depth and min_depth to other players
+           P2Pchannel::mychnl->send_data_to(Config::myconfig->get_suc(), &depth, sizeof(depth));
+           P2Pchannel::mychnl->send_data_to(Config::myconfig->get_suc(), &min_depth, sizeof(min_depth));
+           P2Pchannel::mychnl->send_data_to(Config::myconfig->get_pre(), &depth, sizeof(depth));
+           P2Pchannel::mychnl->send_data_to(Config::myconfig->get_pre(), &min_depth, sizeof(min_depth));
+           
            Ps.shares[1] = Ps0;
            perms.shares[1] = perm0;
         }
@@ -191,6 +198,10 @@ class Dt{
 
             P2Pchannel::mychnl->recv_perm(owner, perms.shares[0]);
             P2Pchannel::mychnl->recv_perm(owner, perms.shares[1]);
+
+            // Receive depth and min_depth from owner
+            P2Pchannel::mychnl->recv_data_from(owner, &depth, sizeof(depth));
+            P2Pchannel::mychnl->recv_data_from(owner, &min_depth, sizeof(min_depth));
         }
     }
 
