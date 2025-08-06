@@ -372,7 +372,53 @@ class P2Pchannel{
             recv_data_from(player, vec.data(), size * sizeof(T));
         }
     }
+	template<typename T>
+    void send_vectors(std::string player, const std::vector<std::vector<T>>& data) {
+        if (data.empty()) {
+            uint64_t num_vectors = 0;
+            send_data_to(player, &num_vectors, sizeof(uint64_t));
+            return;
+        }
+        uint64_t num_vectors = data.size();
+        uint64_t num_elements_per_vector = data[0].size();
+        
+        send_data_to(player, &num_vectors, sizeof(uint64_t));
+        send_data_to(player, &num_elements_per_vector, sizeof(uint64_t));
+        
+        if (num_vectors > 0 && num_elements_per_vector > 0) {
+            std::vector<T> flat_data;
+            flat_data.reserve(num_vectors * num_elements_per_vector);
+            for (const auto& vec : data) {
+                flat_data.insert(flat_data.end(), vec.begin(), vec.end());
+            }
+            send_data_to(player, flat_data.data(), flat_data.size() * sizeof(T));
+        }
+    }
 
+    template<typename T>
+    void recv_vectors(std::string player, std::vector<std::vector<T>>& data) {
+        uint64_t num_vectors;
+        recv_data_from(player, &num_vectors, sizeof(uint64_t));
+        if (num_vectors == 0) {
+            data.clear();
+            return;
+        }
+        uint64_t num_elements_per_vector;
+        recv_data_from(player, &num_elements_per_vector, sizeof(uint64_t));
+        
+        data.assign(num_vectors, std::vector<T>(num_elements_per_vector));
+        
+        if (num_vectors > 0 && num_elements_per_vector > 0) {
+            std::vector<T> flat_data(num_vectors * num_elements_per_vector);
+            recv_data_from(player, flat_data.data(), flat_data.size() * sizeof(T));
+            for (uint64_t i = 0; i < num_vectors; ++i) {
+                auto start_it = flat_data.begin() + i * num_elements_per_vector;
+                auto end_it = start_it + num_elements_per_vector;
+                data[i].assign(start_it, end_it);
+            }
+        }
+    }
+	
     void send_perm(std::string player, const Perm& p) {
         send_vector(player, p.zeta);
         send_vector(player, p.sigma);

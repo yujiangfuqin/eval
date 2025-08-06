@@ -1,3 +1,6 @@
+#ifndef EVAL_HPP
+#define EVAL_HPP
+
 #include "dt.hpp"
 #include "shuffler.hpp"
 
@@ -168,3 +171,5 @@ class DtEval{
 
     }
 };
+
+#endif // EVAL_HPP
