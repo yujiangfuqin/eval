@@ -14,11 +14,12 @@ std::string Timer::now_name;
 
 int main(int argc, const char** argv) {
     std::string st = argv[1];
-    std::string config_path = "../" + st + "_config.JSON";
+    std::string config_path = "./" + st + "_config.JSON";
     Config::myconfig = new Config(config_path);
     P2Pchannel::mychnl = new P2Pchannel(Config::myconfig->Pmap, st);
     Config::myconfig->set_player(st);
 
+    // 初始化伪随机数生成器
     PRSS prss;
     prss.left = Config::myconfig->get_left_key();
     prss.right= Config::myconfig->get_right_key();

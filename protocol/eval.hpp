@@ -3,6 +3,7 @@
 
 #include "dt.hpp"
 #include "shuffler.hpp"
+#include "cot.hpp"
 
 template<typename T>
 class DtEval{
@@ -11,6 +12,7 @@ class DtEval{
     Shuffler<T> shuffler;
     RepShare<std::vector<T>> features;
     RepShare<std::vector<uint32_t>> perms_n, perms_f;
+    cotp<T> cot_executor;
 
 
     public:
@@ -161,7 +163,8 @@ class DtEval{
             t_share.shares[0] = cur_node.shares[0].t; t_share.shares[1] = cur_node.shares[1].t;
             
             R.shares[0] += t_share.shares[0]; R.shares[1] += t_share.shares[1];
-            //cot(cur_feature, t_share, ln_share, rn_share, lf_share, rf_share); 通过cot更新idx_n和idx_f
+            //cot(t_share, cur_feature, ln_share, rn_share, lf_share, rf_share); 通过cot更新dt->idx_n和dt->idx_f
+            //cot(RepShare<T>, RepShare<T>, ln_share, rn_share, lf_share, rf_share); 通过cot更新idx_n和idx_f
         }
 
         return shuffler.reveal(R, std::numeric_limits<T>::max());
